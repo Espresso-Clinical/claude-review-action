@@ -1,10 +1,9 @@
 # Claude Code Review Guide
 
-> **Last updated:** YYYY-MM-DD | **Owner:** Your team
+> **Last updated:** 2026-03-10 | **Owner:** Engineering team
 >
-> This file is automatically injected into the Claude reviewer's prompt.
-> Place it at `.github/claude-review-guide.md` and reference it via
-> `review-guide-path: .github/claude-review-guide.md` in your workflow.
+> This file is injected into the Claude reviewer's prompt automatically.
+> Place it at `.github/claude-review-guide.md` and set `review-guide-path` in your workflow.
 
 ---
 
@@ -53,74 +52,38 @@ Before reviewing code quality, check that all changed files belong together:
 
 Flag these as **BLOCKERS**:
 
-- Missing authorization checks on new endpoints
+- Missing tenant/org isolation in database queries (data leak between accounts)
+- Missing authorization check on new endpoints
 - Unvalidated user input (SQL injection, XSS, command injection)
-- Secrets or credentials in code, error messages, or logs
-- Missing tenant isolation (data leak between accounts/orgs)
-- Hardcoded secrets (must come from environment or secret manager)
+- Secrets in error messages or logs (API keys, passwords, emails)
+- Missing `await` on async operations (unhandled promise rejections)
 
 Flag these as **HIGH**:
 
-- Overly permissive IAM/RBAC roles
-- Missing rate limiting on public endpoints
-- Sensitive data in debug/info logs
-- Missing CSRF protection on state-changing endpoints
+- Overly permissive IAM or RBAC roles
+- Missing feature flag on new endpoints
+- Sensitive data in debug/info-level logs
 
 ---
 
 ## Testing Expectations
 
-- Missing tests for new functions/handlers → **BLOCKER**
-- Missing tests for changes to existing logic → **HIGH**
+- Flag missing tests as **BLOCKER** for new functions/handlers
+- Flag missing tests as **HIGH** for changes to existing logic
 - Coverage target: 80%+ for new code
 - Verify test mocks match real function signatures
-- Edge cases: empty arrays, null values, concurrent operations
 
 ---
 
-## Error Handling
+## Cross-PR Awareness
 
-- All async operations must have error handling → **HIGH**
-- User-facing error messages must be helpful, not technical → **MEDIUM**
-- Don't swallow errors silently — log them at minimum → **HIGH**
-- Distinguish between retryable and permanent failures → **MEDIUM**
-
----
-
-<!-- ============================================================
-     ADD YOUR DOMAIN-SPECIFIC SECTIONS BELOW
-     ============================================================
-     Examples of sections teams commonly add:
-
-     ## API Design
-     - REST conventions, naming, pagination patterns
-
-     ## Database
-     - Migration conventions, query patterns, indexing rules
-
-     ## Architecture
-     - Module boundaries, dependency rules, import conventions
-
-     ## Deployment Readiness
-     - Feature flags, config, monitoring, rollback plans
-
-     ## Framework-Specific Patterns
-     - React hooks rules, state management, component structure
-     ============================================================ -->
-
-## Code Style
-
-<!-- Adjust to match your project's style guide -->
-
-- Flag style violations only if 3+ instances in the same PR
-- Prefer `const` over `let`
-- `async/await` over raw promises
-- Consistent naming: camelCase for variables, PascalCase for types
-- Lines under 120 characters
+When reviewing a PR that's part of a feature chain:
+- Check for merge conflicts with other open PRs touching the same files
+- Verify migration PRs are merged before code that depends on new columns
+- Check that types/enums match between migration, model, and API validation
 
 ---
 
 ## Package Manager
 
-<!-- Pick one and enforce it -->
-**Always use [yarn/npm/pnpm].** Flag the wrong package manager or lock file as a **BLOCKER**.
+**Always yarn, never npm.** Flag any `npm install`, `npm run`, or `package-lock.json` as a BLOCKER.
