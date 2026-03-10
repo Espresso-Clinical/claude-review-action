@@ -73,7 +73,7 @@ The action works out of the box, but reviews are significantly better when you t
 This is the opening line of every review prompt. Default is `"You are a code reviewer."` — generic and unhelpful. Replace it with a one-liner about your project:
 
 ```yaml
-context-intro: "You are a code reviewer for Torii's app-usage service — a Python/TypeScript monorepo that fetches, processes, aggregates, and stores SaaS app usage events."
+context-intro: "You are a code reviewer for Torii's integration service — a TypeScript monorepo that connects to third-party SaaS APIs, normalizes data, and syncs it into the platform."
 ```
 
 Good context intros mention: what the project does, the tech stack, and any important architectural context. Keep it to 1-2 sentences.
