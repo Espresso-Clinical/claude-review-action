@@ -127,6 +127,7 @@ See the [`examples/`](examples/) directory:
 - **[minimal.yml](examples/minimal.yml)** — Label trigger only (~20 lines)
 - **[standard.yml](examples/standard.yml)** — 3 triggers, review guide, critical rules
 - **[advanced.yml](examples/advanced.yml)** — All 20 inputs with explanatory comments
+- **[claude-review-guide.md](examples/claude-review-guide.md)** — Example review guide template
 
 ## How It Works
 
