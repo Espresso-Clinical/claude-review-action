@@ -221,7 +221,6 @@ If you have an existing 500+ line Claude review workflow:
 
 2. **Failure type detection** — The action reliably detects `max_turns` failures. API error subtypes (401 vs 429) may not be distinguishable and fall back to a generic message.
 
-3. **Shallow checkout** — Uses `fetch-depth: 1` for speed. Sufficient for Claude's file reads, but `detect-previous.sh` fetches the base branch separately for commit comparison.
 
 ## Contributing
 
