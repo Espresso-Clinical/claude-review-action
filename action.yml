@@ -115,6 +115,25 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        if [ -z "$ANTHROPIC_API_KEY" ]; then
+          echo "::error::Missing ANTHROPIC_API_KEY. Make sure the secret is set in your repo or org settings."
+          echo "::error::See https://github.com/toriihq/claude-review-action#setup for setup instructions."
+          exit 1
+        fi
+        case "$REVIEW_AUTHORITY" in
+          comment-only|request-changes|full) ;;
+          *)
+            echo "::error::Invalid review-authority: '$REVIEW_AUTHORITY'. Must be one of: comment-only, request-changes, full."
+            exit 1
+            ;;
+        esac
+      env:
+        ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        REVIEW_AUTHORITY: ${{ inputs.review-authority }}
+
     - name: Resolve PR
       id: resolve-pr
       shell: bash
