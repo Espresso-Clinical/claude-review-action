@@ -225,12 +225,13 @@ If you have an existing 500+ line Claude review workflow:
 
 ## Contributing
 
-This is a pure bash + markdown project — no build step required.
+Contributions are welcome! This is a pure bash + markdown project — no build step required.
 
-1. Create a feature branch
-2. Make your changes
-3. Test by pointing a workflow at your branch: `uses: toriihq/claude-review-action@your-branch`
-4. Open a pull request
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test by pointing a workflow at your fork: `uses: your-user/claude-review-action@your-branch`
+5. Open a pull request
 
 ## License
 
