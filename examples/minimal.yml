@@ -1,0 +1,23 @@
+# Minimal Claude Code Review workflow
+# Triggers on the "claude-review" label — just add the label to any PR.
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [labeled]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'claude-review'
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+      checks: read
+    steps:
+      - uses: toriihq/claude-review-action@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}

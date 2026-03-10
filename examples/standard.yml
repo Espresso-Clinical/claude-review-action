@@ -1,0 +1,43 @@
+# Standard Claude Code Review workflow
+# Supports 3 triggers: label, @claude comment, and inline review comment.
+# Includes review guide, critical rules, and concurrency control.
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: |
+      (github.event_name == 'pull_request' && github.event.label.name == 'claude-review') ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+      checks: read
+    steps:
+      - uses: toriihq/claude-review-action@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          review-guide-path: .github/claude-review-guide.md
+          default-branch: master
+          context-intro: "You are a code reviewer for our project."
+          critical-rules: |
+            1. All API calls MUST use the approved HTTP client
+            2. No secrets or credentials in code
+            3. All user input MUST be validated
