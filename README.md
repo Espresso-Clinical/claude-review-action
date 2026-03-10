@@ -2,12 +2,30 @@
 
 AI-powered code review using Claude. A reusable GitHub Composite Action that handles diff capture, re-review reconciliation, cost tracking, and configurable review authority.
 
-## Quick Start
+## Setup
 
-Add the `claude-review` label to any PR to trigger a review:
+### Prerequisites
+
+1. **Anthropic API key** — Get one from [console.anthropic.com](https://console.anthropic.com). Add it as a repository or organization secret:
+   - Go to **Settings → Secrets and variables → Actions → New repository secret**
+   - Name: `ANTHROPIC_API_KEY`
+   - Value: your `sk-ant-...` key
+
+2. **Claude GitHub App** — The action uses [anthropics/claude-code-action](https://github.com/anthropics/claude-code-action) under the hood, which requires the Claude GitHub App installed on your repo. Follow the [claude-code-action setup instructions](https://github.com/anthropics/claude-code-action#setup) to install it. This gives `claude[bot]` permission to post reviews and comments.
+
+3. **Create the `claude-review` label** — Go to **Issues → Labels → New label** and create a label named `claude-review`. This is the trigger — adding it to a PR starts the review. (You can customize the label name via the `review-label` input, but your workflow's `if:` condition must match.)
+
+### Optional
+
+4. **Review guide** — Create a `.github/claude-review-guide.md` file in your repo with your team's review standards. See the [example template](examples/claude-review-guide.md). The action fetches this file from your default branch and injects it into the review prompt.
+
+5. **GitHub Actions permissions** — If your org restricts Actions permissions, ensure the workflow has access to the permissions listed in [Required Permissions](#required-permissions) below.
+
+### Add the workflow
+
+Create `.github/workflows/claude-review.yml` in your repo:
 
 ```yaml
-# .github/workflows/claude-review.yml
 name: Claude Code Review
 on:
   pull_request:
@@ -30,7 +48,15 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-That's it. One required input — everything else has sensible defaults.
+### Test it
+
+1. Open any PR in your repo
+2. Add the `claude-review` label
+3. Watch the Actions tab — Claude will post a review within a few minutes
+
+### Want `@claude` comment triggers too?
+
+Use the [standard example](examples/standard.yml) instead — it adds support for `@claude` comments on PRs and inline review comment triggers, plus concurrency control.
 
 ## Features
 
