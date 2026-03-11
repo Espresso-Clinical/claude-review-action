@@ -8,6 +8,13 @@ Complete ALL analysis before submitting. Submit exactly ONE review at the end.
 Format: 🔴 BLOCKERS → 🟠 HIGH → 🟡 MEDIUM → 🔵 LOW/NITS → ✅ What's Done Well
 End with a Verdict line. Skip empty sections.
 
+TRUNCATED DIFF DISCLOSURE:
+If the diff was truncated (you'll see a "DIFF TRUNCATED" section listing missing files),
+you MUST include a note at the end of your review, after the Verdict line:
+> **⚠️ Partial review:** Diff was truncated. Files not fully reviewed: `file1.ts`, `file2.ts`, ...
+> Spot-checked N of M missing files; remaining may need manual review.
+List only the files you did NOT Read. This helps human reviewers focus their effort.
+
 REVIEW FORMATTING:
 Use collapsed sections to keep reviews scannable:
 - Wrap code examples and detailed explanations in <details><summary>...</summary>...</details>
