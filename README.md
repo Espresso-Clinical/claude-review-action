@@ -5,31 +5,12 @@
 <h1 align="center">Claude Code Review Action</h1>
 
 <p align="center">
-  AI-powered code review using Claude. A reusable GitHub Composite Action that handles diff capture, re-review reconciliation, cost tracking, and configurable review authority.
+  AI-powered code review using Claude. Drop this into any repo and get reviews in minutes.
 </p>
 
-## Setup
+## Quick Start
 
-### Prerequisites
-
-1. **Anthropic API key** — Get one from [console.anthropic.com](https://console.anthropic.com). Add it as a repository or organization secret:
-   - Go to **Settings → Secrets and variables → Actions → New repository secret**
-   - Name: `ANTHROPIC_API_KEY`
-   - Value: your `sk-ant-...` key
-
-2. **Claude GitHub App** — The action uses [anthropics/claude-code-action](https://github.com/anthropics/claude-code-action) under the hood. You must install the Claude GitHub App on your repo (run `/install-github-app` in Claude Code, or follow the [claude-code-action setup](https://github.com/anthropics/claude-code-action#setup)). This is **required** — without it, reviews post as `github-actions[bot]` instead of `claude[bot]`, and re-review detection, review dismissal, and cost tracking all break.
-
-3. **Create the `claude-review` label** — Go to **Issues → Labels → New label** and create a label named `claude-review`. This is the trigger — adding it to a PR starts the review. (You can customize the label name via the `review-label` input, but your workflow's `if:` condition must match.)
-
-### Optional
-
-4. **Review guide** — Create a `.github/claude-review-guide.md` file in your repo with your team's review standards. See the [example template](examples/claude-review-guide.md). The action fetches this file from your default branch and injects it into the review prompt.
-
-5. **GitHub Actions permissions** — If your org restricts Actions permissions, ensure the workflow has access to the permissions listed in [Required Permissions](#required-permissions) below.
-
-### Add the workflow
-
-Create `.github/workflows/claude-review.yml` in your repo:
+**1. Add the workflow** — create `.github/workflows/claude-review.yml`:
 
 ```yaml
 name: Claude Code Review
@@ -54,98 +35,131 @@ jobs:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
 ```
 
-### Test it
+**2. Add your API key** — Go to repo **Settings > Secrets > Actions** and add `ANTHROPIC_API_KEY` ([get one here](https://console.anthropic.com))
 
-1. Open any PR in your repo
-2. Add the `claude-review` label
-3. Watch the Actions tab — Claude will post a review within a few minutes
+**3. Install the Claude GitHub App** — run `/install-github-app` in Claude Code, or follow the [claude-code-action setup](https://github.com/anthropics/claude-code-action#setup)
 
-### Want `@claude` comment triggers too?
+**4. Create a `claude-review` label** — Go to **Issues > Labels > New label**
 
-Use the [standard example](examples/standard.yml) instead — it adds support for `@claude` in PR comments and inline review comments, plus concurrency control.
+**5. Test it** — open any PR, add the `claude-review` label, and watch the Actions tab.
 
-## Customize for Your Repo
+That's it. Claude will post a review within a few minutes.
 
-The action works out of the box, but reviews are significantly better when you tell Claude about your project. There are three levels of customization — use whichever combination fits your needs.
+---
 
-### 1. `context-intro` — Tell Claude what it's reviewing
+## Make It Better
 
-This is the opening line of every review prompt. Default is `"You are a code reviewer."` — generic and unhelpful. Replace it with a one-liner about your project:
+The action works out of the box, but reviews improve dramatically when you tell Claude about your project. Three levels — use whichever fits:
 
-```yaml
-context-intro: "You are a code reviewer for Torii's integration service — a TypeScript monorepo that connects to third-party SaaS APIs, normalizes data, and syncs it into the platform."
-```
-
-Good context intros mention: what the project does, the tech stack, and any important architectural context. Keep it to 1-2 sentences.
-
-### 2. `critical-rules` — Rules that must never be violated
-
-These are injected as BLOCKER-level rules. Claude will flag violations at the highest severity. Use these for your team's non-negotiable conventions:
+### Level 1: Tell Claude what it's reviewing
 
 ```yaml
-critical-rules: |
-  1. All database queries MUST use parameterized statements
-  2. All API endpoints MUST check authentication
-  3. No secrets or credentials in code or logs
-  4. Always yarn, never npm — flag package-lock.json as a BLOCKER
-  5. All new functions MUST have tests
+- uses: toriihq/claude-review-action@v1
+  with:
+    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    context-intro: "You are a code reviewer for Acme's billing service — a Node.js/TypeScript API that processes payments and manages subscriptions."
 ```
 
-Keep the list focused — 3-7 rules is ideal. Too many dilutes their impact.
+One sentence about your project, tech stack, and domain. Default is `"You are a code reviewer."` — generic and unhelpful.
 
-### 3. `review-guide-path` — Full review guide for deep customization
-
-For teams that want detailed review standards, create a `.github/claude-review-guide.md` file in your repo. This is a markdown file that gets injected into the review prompt — Claude reads it as instructions.
+### Level 2: Add critical rules
 
 ```yaml
-review-guide-path: .github/claude-review-guide.md
+- uses: toriihq/claude-review-action@v1
+  with:
+    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    context-intro: "You are a code reviewer for Acme's billing service."
+    critical-rules: |
+      1. All database queries MUST use parameterized statements
+      2. All API endpoints MUST check authentication
+      3. No secrets or credentials in code or logs
+      4. Always yarn, never npm
+      5. All new functions MUST have tests
 ```
 
-A good review guide covers:
-- **Security checklist** — org-specific security rules (tenant isolation, auth patterns)
-- **Testing expectations** — coverage targets, what must be tested
-- **Code style** — conventions that linters don't catch
-- **Architecture rules** — module boundaries, import conventions, naming patterns
-- **Domain-specific patterns** — your project's specific patterns and anti-patterns
+These become BLOCKER-level findings. Keep it to 3-7 rules — too many dilutes their impact.
 
-See the [example review guide](examples/claude-review-guide.md) for a template based on production usage.
+### Level 3: Full review guide
 
-**When to use what:**
-- Small project, few conventions → `context-intro` + `critical-rules` is enough
-- Established codebase with detailed standards → add a `review-guide-path`
-- Both can be used together — critical rules are always BLOCKER severity, the guide provides broader context
+For detailed review standards, create `.github/claude-review-guide.md` in your repo and point to it:
 
-## Features
+```yaml
+- uses: toriihq/claude-review-action@v1
+  with:
+    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    context-intro: "You are a code reviewer for Acme's billing service."
+    critical-rules: |
+      1. All database queries MUST use parameterized statements
+      2. All API endpoints MUST check authentication
+    review-guide-path: .github/claude-review-guide.md
+```
 
-- **3 trigger types** — Label (`claude-review`), `@claude` in PR comments, `@claude` in inline review comments (response appears as a PR review, not an inline reply — a `claude-code-action` limitation)
-- **Re-review reconciliation** — Tracks previous findings, author responses, and new commits
-- **Relevant commit filtering** — Only flags commits that contribute real changes vs base
-- **Configurable review authority** — Comment-only, request-changes, or full (with auto-approve)
-- **PR size guard** — Skips reviews for PRs exceeding configurable file limits
-- **Diff truncation** — Line and byte limits prevent token overflow
-- **Cost tracking** — Appends cost, turns, and model to the review body
-- **Review dismissal** — Dismisses previous Claude reviews before posting new ones
-- **Typed failure messages** — Distinguishes max-turns, API errors, and missing output
-- **Review guide support** — Fetches guide from default branch with PR branch fallback
-- **Pure bash** — No TypeScript, no node_modules, no build step
+A good review guide covers security checklists, testing expectations, code style, architecture rules, and domain-specific patterns. See the [example template](examples/claude-review-guide.md).
 
-## Inputs
+---
 
-### Required
+## Want `@claude` in comments too?
 
-| Input | Description |
-|-------|-------------|
-| `anthropic-api-key` | Anthropic API key (from secrets) |
+The minimal setup only triggers on labels. To also support `@claude` in PR comments and inline review comments, use this workflow instead:
+
+```yaml
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [labeled]
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: |
+      (github.event_name == 'pull_request' && github.event.label.name == 'claude-review') ||
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude'))
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+      checks: read
+    steps:
+      - uses: toriihq/claude-review-action@v1
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Add your customization here:
+          # context-intro: "..."
+          # critical-rules: |
+          #   1. ...
+          # review-guide-path: .github/claude-review-guide.md
+```
+
+Also available as copyable files: [minimal.yml](examples/minimal.yml), [standard.yml](examples/standard.yml), [advanced.yml](examples/advanced.yml).
+
+---
+
+## All Inputs
+
+Only `anthropic-api-key` is required. Everything else has sensible defaults.
 
 ### Review Content
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `review-guide-path` | `""` | Path to repo's review guide markdown. Empty = no guide |
+| `context-intro` | `"You are a code reviewer."` | Opening line of prompt — describe your project |
 | `critical-rules` | `""` | Multiline string injected as BLOCKER-level rules |
-| `extra-prompt` | `""` | Appended to end of prompt (custom instructions) |
+| `review-guide-path` | `""` | Path to repo's review guide markdown |
+| `extra-prompt` | `""` | Custom instructions appended to end of prompt |
 | `include-pr-description` | `true` | Feed PR title+body into review prompt |
-| `context-intro` | `"You are a code reviewer."` | Opening line of prompt (repo identity/context) |
 
 ### Limits
 
@@ -155,7 +169,7 @@ See the [example review guide](examples/claude-review-guide.md) for a template b
 | `max-diff-lines` | `3000` | Truncate diff after N lines |
 | `max-diff-bytes` | `80000` | Truncate diff after N bytes |
 | `max-turns` | `30` | Claude conversation turn limit |
-| `timeout-minutes` | `20` | Job timeout (informational — set actual timeout on your job) |
+| `timeout-minutes` | `20` | Informational — set actual timeout on your job |
 
 ### Model & Tools
 
@@ -168,26 +182,72 @@ See the [example review guide](examples/claude-review-guide.md) for a template b
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `review-authority` | `request-changes` | Level: `comment-only`, `request-changes`, or `full` |
-| `approve-threshold` | `strict` | For `full` mode: `strict` (zero MEDIUM+) or `normal` (zero HIGH+) |
-| `approve-max-files` | `50` | For `full` mode: only approve PRs with <= N files |
+| `review-authority` | `request-changes` | `comment-only`, `request-changes`, or `full` |
+| `approve-threshold` | `strict` | For `full`: `strict` (zero MEDIUM+) or `normal` (zero HIGH+) |
+| `approve-max-files` | `50` | For `full`: only approve PRs with <= N files |
+
+**Authority levels:**
+
+| Level | Can block? | Can approve? | Behavior |
+|-------|-----------|-------------|----------|
+| `comment-only` | No | No | Advisory only — never blocks PRs |
+| `request-changes` | Yes | No | Blocks on blockers/high. **Default.** |
+| `full` | Yes | Yes (guarded) | Can also APPROVE clean PRs, gated by threshold + file count |
 
 ### Triggers
 
 | Input | Default | Description |
 |-------|---------|-------------|
-| `review-label` | `claude-review` | Label name for `label_trigger`. Must match your workflow's `if:` |
-| `trigger-phrase` | `@claude` | Comment trigger phrase (excluded from author feedback) |
-| `default-branch` | `""` (auto-detect) | Base branch for guide fetch. Empty = auto-detect |
+| `review-label` | `claude-review` | Label trigger name (must match your `if:` condition) |
+| `trigger-phrase` | `@claude` | Comment trigger phrase |
+| `default-branch` | `""` (auto) | Base branch for guide fetch |
 
 ### Behavior
 
 | Input | Default | Description |
 |-------|---------|-------------|
 | `skip-if-already-reviewed` | `true` | Skip on label trigger if no new commits since last review |
-| `include-previous-review` | `true` | Enable re-review reconciliation with previous findings |
+| `include-previous-review` | `true` | Re-review reconciliation with previous findings |
 | `track-cost` | `true` | Append cost/turns/model to review comment |
 | `dismiss-previous-reviews` | `true` | Dismiss old Claude reviews before posting new one |
+
+---
+
+## Features
+
+- **3 trigger types** — Label, `@claude` in PR comments, `@claude` in inline review comments
+- **Re-review reconciliation** — Tracks previous findings, author responses, and new commits. Each HIGH/BLOCKER is marked FIXED, ACCEPTED, or STILL OPEN
+- **Relevant commit filtering** — Only flags commits that contribute real changes vs base
+- **Truncation awareness** — When diff exceeds limits, detects missing files, instructs Claude to spot-check, and requires disclosure in the verdict
+- **PR size guard** — Skips reviews for PRs exceeding configurable file limits
+- **Cost tracking** — Appends cost, turns, and model to the review body
+- **Review dismissal** — Dismisses previous Claude reviews before posting new ones
+- **Typed failure messages** — Distinguishes max-turns, API errors, and missing output
+- **Pure bash** — No TypeScript, no node_modules, no build step
+
+## How It Works
+
+```
+resolve-pr.sh        → Normalize PR number + SHA across trigger types
+  ↓
+actions/checkout@v4  → Checkout the PR branch
+  ↓
+fetch-guide.sh       → Fetch review guide (default branch + PR fallback)
+  ↓
+capture-context.sh   → Diff capture, size guard, truncation detection
+  ↓
+detect-previous.sh   → Find previous reviews, calculate new commits
+  ↓
+fetch-comments.sh    → Author comments since last review (if re-review)
+  ↓
+build-prompt.sh      → Assemble prompt from all inputs + context
+  ↓
+claude-code-action   → Run Claude with assembled prompt
+  ↓
+post-failure.sh      → Post typed failure message (if failed)
+  ↓
+report-cost.sh       → Append cost/turns/model to review body
+```
 
 ## Required Permissions
 
@@ -203,67 +263,13 @@ permissions:
   checks: read           # Read check status (optional, used by Claude)
 ```
 
-## Examples
-
-See the [`examples/`](examples/) directory:
-
-- **[minimal.yml](examples/minimal.yml)** — Label trigger only (~20 lines)
-- **[standard.yml](examples/standard.yml)** — 3 triggers, review guide, critical rules
-- **[advanced.yml](examples/advanced.yml)** — All 20 inputs with explanatory comments
-- **[claude-review-guide.md](examples/claude-review-guide.md)** — Example review guide template
-
-## How It Works
-
-```
-resolve-pr.sh        → Normalize PR number + SHA across trigger types
-  ↓
-actions/checkout@v4  → Checkout the PR branch
-  ↓
-fetch-guide.sh       → Fetch review guide (default branch + PR fallback)
-  ↓
-capture-context.sh   → Diff capture, size guard, PR description
-  ↓
-detect-previous.sh   → Find previous reviews, calculate new commits
-  ↓
-fetch-comments.sh    → Author comments since last review (if re-review)
-  ↓
-build-prompt.sh      → Assemble 11-section prompt from all inputs
-  ↓
-claude-code-action   → Run Claude with assembled prompt
-  ↓
-post-failure.sh      → Post typed failure message (if failed)
-  ↓
-report-cost.sh       → Append cost/turns/model to review body
-```
-
-## Review Authority Levels
-
-| Level | Can block? | Can approve? | Behavior |
-|-------|-----------|-------------|----------|
-| `comment-only` | No | No | Always posts as COMMENT. Advisory only — never blocks PRs. |
-| `request-changes` | Yes | No | REQUEST_CHANGES for blockers/high, COMMENT for everything else. **Default.** |
-| `full` | Yes | Yes (guarded) | Like `request-changes`, plus can APPROVE clean PRs — gated by `approve-threshold` (severity cutoff) and `approve-max-files` (PR size limit). |
-
-## Re-review Reconciliation
-
-When Claude detects a previous review on the same PR:
-
-1. **Finds previous review** via dual API detection (PR reviews + comments fallback)
-2. **Filters new commits** to only those contributing real changes vs base branch
-3. **Captures author responses** (PR comments + inline comments since last review)
-4. **Reconciles findings** — each previous HIGH/BLOCKER is marked FIXED, ACCEPTED, or STILL OPEN
-5. **New verdict** reflects reconciliation — only STILL OPEN findings block approval
-
-Set `include-previous-review: false` to disable reconciliation (always full review, no history).
-
 ## Known Limitations
 
-1. **Custom trigger phrases don't get the 👀 reaction** — When you use `@claude`, the Claude GitHub App reacts with 👀 to acknowledge the mention. If you customize `trigger-phrase` to something else (e.g., `@claude-review`), the review still runs but the Claude App won't add the 👀 reaction since it only recognizes mentions of its own handle. This is cosmetic — reviews work identically either way.
+1. **Custom trigger phrases don't get the reaction** — The Claude GitHub App reacts with a eyes emoji to `@claude` mentions. Custom trigger phrases work but don't get this cosmetic reaction.
 
-2. **Review dismissal is best-effort** — Dismissal commands are injected into Claude's prompt, not a separate step. If Claude's API call fails mid-review, old reviews may persist.
+2. **Review dismissal is best-effort** — Dismissal commands are in Claude's prompt, not a separate step. If Claude fails mid-review, old reviews may persist.
 
-3. **Failure type detection** — The action reliably detects `max_turns` failures. API error subtypes (401 vs 429) may not be distinguishable and fall back to a generic message.
-
+3. **Failure type detection** — Reliably detects `max_turns` failures. API error subtypes (401 vs 429) fall back to a generic message.
 
 ## License
 
