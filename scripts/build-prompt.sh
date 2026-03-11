@@ -77,6 +77,26 @@ DIFF_HEADER
 cat /tmp/pr-diff.txt >> "$PROMPT_FILE"
 echo '```' >> "$PROMPT_FILE"
 
+# --- Section 7b: Truncated files list (if diff was truncated) ---
+if [ -s /tmp/truncated-files.txt ]; then
+  MISSING_COUNT=$(wc -l < /tmp/truncated-files.txt | tr -d ' ')
+  cat >> "$PROMPT_FILE" <<TRUNC_HEADER
+
+## ⚠️ DIFF TRUNCATED — ${MISSING_COUNT} files not shown
+
+The following files are part of this PR but were cut off by the diff size limit.
+You MUST spot-check at least 2-3 of these files using the Read tool, prioritizing:
+- Files matching CRITICAL RULES patterns (routes, DB queries, Lambda invokes)
+- Files with security-sensitive names (auth, permissions, secrets, credentials)
+- New files (more likely to have issues than modifications)
+
+**Files not in diff:**
+TRUNC_HEADER
+  while IFS= read -r file; do
+    echo "- \`$file\`" >> "$PROMPT_FILE"
+  done < /tmp/truncated-files.txt
+fi
+
 # --- Section 8: Focus info (re-review with new commits — always shown, even without reconciliation) ---
 if [ "$HAS_PREVIOUS" = "true" ] && [ -n "$NEW_COMMITS" ]; then
   cat >> "$PROMPT_FILE" <<FOCUS_END

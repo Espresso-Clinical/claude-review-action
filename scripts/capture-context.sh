@@ -3,8 +3,8 @@ set -euo pipefail
 
 # Capture PR context: size check, diff (truncated), description.
 # Inputs (env vars): GH_TOKEN, REPO, PR_NUMBER, MAX_FILES, MAX_DIFF_LINES, MAX_DIFF_BYTES, INCLUDE_PR_DESCRIPTION
-# Outputs (GITHUB_OUTPUT): file_count
-# Outputs (files): /tmp/pr-diff.txt, /tmp/pr-description.txt
+# Outputs (GITHUB_OUTPUT): file_count, diff_truncated
+# Outputs (files): /tmp/pr-diff.txt, /tmp/pr-description.txt, /tmp/truncated-files.txt
 
 # --- PR size guard ---
 FILE_COUNT=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '.files | length')
@@ -21,9 +21,13 @@ fi
 # --- Capture diff ---
 gh pr diff "$PR_NUMBER" --repo "$REPO" > /tmp/pr-diff.txt
 
+# Track whether truncation occurs
+TRUNCATED=false
+
 # Truncate by line count
 LINES=$(wc -l < /tmp/pr-diff.txt)
 if [ "$LINES" -gt "$MAX_DIFF_LINES" ]; then
+  TRUNCATED=true
   head -"$MAX_DIFF_LINES" /tmp/pr-diff.txt > /tmp/pr-diff-truncated.txt
   echo "" >> /tmp/pr-diff-truncated.txt
   echo "... [diff truncated — $LINES total lines, showing first $MAX_DIFF_LINES. Use Read tool on specific files for full context.]" >> /tmp/pr-diff-truncated.txt
@@ -33,6 +37,7 @@ fi
 # Truncate by byte size
 BYTES=$(wc -c < /tmp/pr-diff.txt | tr -d ' ')
 if [ "$BYTES" -gt "$MAX_DIFF_BYTES" ]; then
+  TRUNCATED=true
   head -c "$MAX_DIFF_BYTES" /tmp/pr-diff.txt > /tmp/pr-diff-truncated.txt
   echo "" >> /tmp/pr-diff-truncated.txt
   echo "... [diff truncated — ${BYTES} bytes total, showing first $MAX_DIFF_BYTES. Use Read tool on specific files for full context.]" >> /tmp/pr-diff-truncated.txt
@@ -40,6 +45,20 @@ if [ "$BYTES" -gt "$MAX_DIFF_BYTES" ]; then
 fi
 
 echo "::notice::PR diff captured ($LINES lines, $(wc -c < /tmp/pr-diff.txt | tr -d ' ') bytes)"
+echo "diff_truncated=$TRUNCATED" >> "$GITHUB_OUTPUT"
+
+# --- Detect files missing from truncated diff ---
+: > /tmp/truncated-files.txt
+if [ "$TRUNCATED" = "true" ]; then
+  # Get all PR files
+  gh pr view "$PR_NUMBER" --repo "$REPO" --json files --jq '.files[].path' | sort > /tmp/all-pr-files.txt
+  # Get files present in the truncated diff (diff --git a/path b/path)
+  grep -oP '(?<=^diff --git a/).+(?= b/)' /tmp/pr-diff.txt | sort -u > /tmp/included-files.txt || true
+  # Files in PR but not in truncated diff
+  comm -23 /tmp/all-pr-files.txt /tmp/included-files.txt > /tmp/truncated-files.txt
+  MISSING_COUNT=$(wc -l < /tmp/truncated-files.txt | tr -d ' ')
+  echo "::notice::Diff truncated — $MISSING_COUNT files not included in diff"
+fi
 
 # --- Capture PR description ---
 if [ "$INCLUDE_PR_DESCRIPTION" = "true" ]; then
