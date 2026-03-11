@@ -279,7 +279,7 @@ permissions:
 
 ## Known Limitations
 
-1. **Custom trigger phrases don't get the reaction** — The Claude GitHub App reacts with a eyes emoji to `@claude` mentions. Custom trigger phrases work but don't get this cosmetic reaction.
+1. **Custom trigger phrases don't get the 👀 reaction** — The Claude GitHub App reacts with 👀 to `@claude` mentions. Custom trigger phrases work but don't get this cosmetic reaction.
 
 2. **Review dismissal is best-effort** — Dismissal commands are in Claude's prompt, not a separate step. If Claude fails mid-review, old reviews may persist.
 
