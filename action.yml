@@ -38,7 +38,7 @@ inputs:
   max-files:
     description: 'Skip review if PR exceeds this many files'
     required: false
-    default: '150'
+    default: '50'
   max-diff-lines:
     description: 'Truncate diff after N lines'
     required: false
@@ -78,7 +78,7 @@ inputs:
   approve-max-files:
     description: 'For full mode: only approve PRs with <= N files'
     required: false
-    default: '150'
+    default: '50'
 
   # Triggers
   review-label:
@@ -128,7 +128,7 @@ inputs:
   deep-max-files:
     description: 'Skip deep review if PR exceeds this many files'
     required: false
-    default: '150'
+    default: '50'
   deep-max-turns:
     description: 'Claude turn limit for deep reviews (needs more turns than normal)'
     required: false
