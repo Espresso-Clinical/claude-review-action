@@ -38,7 +38,7 @@ inputs:
   max-files:
     description: 'Skip review if PR exceeds this many files'
     required: false
-    default: '50'
+    default: '150'
   max-diff-lines:
     description: 'Truncate diff after N lines'
     required: false
@@ -78,7 +78,7 @@ inputs:
   approve-max-files:
     description: 'For full mode: only approve PRs with <= N files'
     required: false
-    default: '50'
+    default: '150'
 
   # Triggers
   review-label:
@@ -111,6 +111,28 @@ inputs:
     description: 'Dismiss old Claude reviews before posting new one'
     required: false
     default: 'true'
+
+  # Deep Review
+  review-depth:
+    description: 'Review depth: normal (diff-first) or deep (per-file diffs + flow tracing)'
+    required: false
+    default: 'normal'
+  deep-review-label:
+    description: 'Label that overrides review-depth to deep (applied per-PR)'
+    required: false
+    default: 'claude-deep-review'
+  deep-review-model:
+    description: 'Model override for deep reviews. Empty = use the model input.'
+    required: false
+    default: ''
+  deep-max-files:
+    description: 'Skip deep review if PR exceeds this many files'
+    required: false
+    default: '150'
+  deep-max-turns:
+    description: 'Claude turn limit for deep reviews (needs more turns than normal)'
+    required: false
+    default: '50'
 
 runs:
   using: 'composite'
